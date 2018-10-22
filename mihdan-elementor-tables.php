@@ -9,99 +9,292 @@
  * Text Domain: mihdan-elementor-tables
  * GitHub Plugin URI: https://github.com/mihdan/mihdan-elementor-tables
  */
+namespace Mihdan\Elementor\Tables;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-define( 'EB_TABLES_FILE', __FILE__ );
-define( 'EB_TABLES_VERSION', '1.0.0' );
 
-/**
- * Загрузка плагина
- *
- * Load the plugin after Elementor (and other plugins) are loaded.
- *
- * @since 1.0.0
- */
-function mihdan_elementor_tables() {
-	// Load localization file
-	load_plugin_textdomain( 'mihdan-elementor-tables' );
-	// Notice if the Elementor is not active
-	if ( ! did_action( 'elementor/loaded' ) ) {
-		add_action( 'admin_notices', 'mihdan_elementor_tables_fail_load' );
-		return;
+final class Core {
+	/**
+	 * Plugin Version
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var string The plugin version.
+	 */
+	const VERSION = '1.0.0';
+
+	/**
+	 * Minimum Elementor Version
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var string Minimum Elementor version required to run the plugin.
+	 */
+	const MINIMUM_ELEMENTOR_VERSION = '1.8.0';
+
+	/**
+	 * Minimum PHP Version
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var string Minimum PHP version required to run the plugin.
+	 */
+	const MINIMUM_PHP_VERSION = '5.6';
+
+	/**
+	 * Instance
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access private
+	 * @static
+	 *
+	 * @var Core The single instance of the class.
+	 */
+	private static $_instance = null;
+
+	/**
+	 * Instance
+	 *
+	 * Ensures only one instance of the class is loaded or can be loaded.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 * @static
+	 *
+	 * @return Core An instance of the class.
+	 */
+	public static function get_instance() {
+
+		if ( is_null( self::$_instance ) ) {
+			self::$_instance = new self();
+		}
+		return self::$_instance;
+
 	}
-	// Check required version
-	$elementor_version_required = '1.8.0';
-	if ( ! version_compare( ELEMENTOR_VERSION, $elementor_version_required, '>=' ) ) {
-		add_action( 'admin_notices', 'mihdan_elementor_tables_load_out_of_date' );
-		return;
+
+	/**
+	 * Constructor
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function __construct() {
+
+		add_action( 'init', [ $this, 'i18n' ] );
+		add_action( 'plugins_loaded', [ $this, 'init' ] );
+
 	}
-	add_action( 'elementor/widgets/widgets_registered', function () {
-		require_once __DIR__ . '/widgets/tables-widget.php';
-	} );
-}
-add_action( 'plugins_loaded', 'mihdan_elementor_tables' );
-/**
- * Уведомление админу, что плагин зависит от Elementor
- */
-function mihdan_elementor_tables_fail_load() {
-	$message = '<p>' . __( 'You do not have Elementor Page Builder on your WordPress. Mihdan: Elementor Yandex Maps require Elementor in order to work.', 'mihdan-elementor-tables' ) . '</p>';
-	echo '<div class="error">' . $message . '</div>';
-}
-/**
- * Уведомление админу, что пора бы обновить Elementor
- */
-function mihdan_elementor_tables_load_out_of_date() {
-	if ( ! current_user_can( 'update_plugins' ) ) {
-		return;
+
+	/**
+	 * Load Textdomain
+	 *
+	 * Load plugin localization files.
+	 *
+	 * Fired by `init` action hook.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function i18n() {
+		load_plugin_textdomain( 'mihdan-elementor-tables' );
 	}
-	$file_path    = 'elementor/elementor.php';
-	$upgrade_link = wp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&plugin=' ) . $file_path, 'upgrade-plugin_' . $file_path );
-	// Текст сообщения
-	$message  = '<p>' . __( 'Elementor Google Map Extended may not work or is not compatible because you are using an old version of Elementor.', 'mihdan-elementor-tables' ) . '</p>';
-	$message .= '<p>' . sprintf( '<a href="%s" class="button-primary">%s</a>', $upgrade_link, __( 'Update Elementor Now', 'mihdan-elementor-tables' ) ) . '</p>';
-	echo '<div class="error">' . $message . '</div>';
-}
-/**
- * Get the value of a settings field
- *
- * @param string $option settings field name
- * @param string $section the section name this field belongs to
- * @param string $default default text if it's not found
- *
- * @return mixed
- */
-function mihdan_elementor_tables_get_option( $option, $section, $default = '' ) {
-	$options = get_option( $section );
-	if ( isset( $options[ $option ] ) ) {
-		return $options[ $option ];
+
+	/**
+	 * Initialize the plugin
+	 *
+	 * Load the plugin only after Elementor (and other plugins) are loaded.
+	 * Checks for basic plugin requirements, if one check fail don't continue,
+	 * if all check have passed load the files required to run the plugin.
+	 *
+	 * Fired by `plugins_loaded` action hook.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function init() {
+
+		// Check if Elementor installed and activated
+		if ( ! did_action( 'elementor/loaded' ) ) {
+			add_action( 'admin_notices', [ $this, 'admin_notice_missing_main_plugin' ] );
+			return;
+		}
+
+		// Check for required Elementor version
+		if ( ! version_compare( ELEMENTOR_VERSION, self::MINIMUM_ELEMENTOR_VERSION, '>=' ) ) {
+			add_action( 'admin_notices', [ $this, 'admin_notice_minimum_elementor_version' ] );
+			return;
+		}
+
+		// Check for required PHP version
+		if ( version_compare( PHP_VERSION, self::MINIMUM_PHP_VERSION, '<' ) ) {
+			add_action( 'admin_notices', [ $this, 'admin_notice_minimum_php_version' ] );
+			return;
+		}
+
+		// Add Plugin actions
+		add_action( 'elementor/widgets/widgets_registered', [ $this, 'init_widgets' ] );
+		add_action( 'elementor/controls/controls_registered', [ $this, 'init_controls' ] );
+		add_action( 'elementor/elements/categories_registered', [ $this, 'init_categories' ] );
 	}
-	return $default;
+
+	/**
+	 * Admin notice
+	 *
+	 * Warning when the site doesn't have Elementor installed or activated.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function admin_notice_missing_main_plugin() {
+
+		if ( isset( $_GET['activate'] ) ) unset( $_GET['activate'] );
+
+		$message = sprintf(
+		/* translators: 1: Plugin name 2: Elementor */
+			esc_html__( '"%1$s" requires "%2$s" to be installed and activated.', 'elementor-test-extension' ),
+			'<strong>' . esc_html__( 'Elementor Test Extension', 'elementor-test-extension' ) . '</strong>',
+			'<strong>' . esc_html__( 'Elementor', 'elementor-test-extension' ) . '</strong>'
+		);
+
+		printf( '<div class="notice notice-warning is-dismissible"><p>%1$s</p></div>', $message );
+
+	}
+
+	/**
+	 * Admin notice
+	 *
+	 * Warning when the site doesn't have a minimum required Elementor version.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function admin_notice_minimum_elementor_version() {
+
+		if ( isset( $_GET['activate'] ) ) unset( $_GET['activate'] );
+
+		$message = sprintf(
+		/* translators: 1: Plugin name 2: Elementor 3: Required Elementor version */
+			esc_html__( '"%1$s" requires "%2$s" version %3$s or greater.', 'elementor-test-extension' ),
+			'<strong>' . esc_html__( 'Elementor Test Extension', 'elementor-test-extension' ) . '</strong>',
+			'<strong>' . esc_html__( 'Elementor', 'elementor-test-extension' ) . '</strong>',
+			self::MINIMUM_ELEMENTOR_VERSION
+		);
+
+		printf( '<div class="notice notice-warning is-dismissible"><p>%1$s</p></div>', $message );
+
+	}
+
+	/**
+	 * Admin notice
+	 *
+	 * Warning when the site doesn't have a minimum required PHP version.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function admin_notice_minimum_php_version() {
+
+		if ( isset( $_GET['activate'] ) ) unset( $_GET['activate'] );
+
+		$message = sprintf(
+		/* translators: 1: Plugin name 2: PHP 3: Required PHP version */
+			esc_html__( '"%1$s" requires "%2$s" version %3$s or greater.', 'elementor-test-extension' ),
+			'<strong>' . esc_html__( 'Elementor Test Extension', 'elementor-test-extension' ) . '</strong>',
+			'<strong>' . esc_html__( 'PHP', 'elementor-test-extension' ) . '</strong>',
+			self::MINIMUM_PHP_VERSION
+		);
+
+		printf( '<div class="notice notice-warning is-dismissible"><p>%1$s</p></div>', $message );
+
+	}
+
+	/**
+	 * Init Widgets
+	 *
+	 * Include widgets files and register them
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function init_widgets() {
+
+		// Include Widget files
+		require_once( __DIR__ . '/widgets/tables-widget.php' );
+
+		// Register widget
+		\Elementor\Plugin::instance()->widgets_manager->register_widget_type( new \Mihdan\Elementor\Tables\Widget\Widget() );
+
+	}
+
+	/**
+	 * Init Controls
+	 *
+	 * Include controls files and register them
+	 *
+	 * @since 1.0.0
+	 *
+	 * @access public
+	 */
+	public function init_controls() {
+
+		// Include Control files
+		//require_once( __DIR__ . '/controls/tables-control.php' );
+
+		// Register control
+		//\Elementor\Plugin::$instance->controls_manager->register_control( 'control-type-', new \Test_Control() );
+
+	}
+
+	public function init_categories() {
+		\Elementor\Plugin::$instance->elements_manager->add_category(
+			'mihdan', array(
+				'title' => 'Mihdan Widgets',
+				'icon'  => 'font',
+			)
+		);
+	}
 }
+
+Core::get_instance();
+
+// eof;
+
+
+
+
+
+
+
+
+
+
 /**
  * Register and enqueue a custom stylesheet in the Elementor.
  */
-add_action( 'elementor/editor/before_enqueue_scripts', function() {
-	wp_enqueue_style( 'mihdan-elementor-tables-admin', plugins_url( '/assets/css/mihdan-elementor-tables-admin.css', EB_TABLES_FILE ) );
-	wp_enqueue_script( 'mihdan-elementor-tables-api-admin', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=admin', [ 'jquery' ], EB_TABLES_VERSION, true );
-	wp_localize_script( 'mihdan-elementor-tables-api-admin', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
-	wp_enqueue_script( 'mihdan-elementor-tables-admin', plugins_url( '/assets/js/mihdan-elementor-tables-admin.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api-admin' ], EB_TABLES_VERSION, true );
-} );
-add_action( 'elementor/frontend/after_enqueue_styles', function() {
-	wp_enqueue_style( 'mihdan-elementor-tables', plugins_url( '/assets/css/mihdan-elementor-tables.css', EB_TABLES_FILE ) );
-} );
-add_action( 'elementor/frontend/after_register_scripts', function() {
-	wp_register_script( 'mihdan-elementor-tables-api', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=frontend', [], EB_TABLES_VERSION, true );
-	wp_localize_script( 'mihdan-elementor-tables-api', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
-	wp_register_script( 'mihdan-elementor-tables', plugins_url( '/assets/js/mihdan-elementor-tables.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api' ], EB_TABLES_VERSION, true );
-} );
+//add_action( 'elementor/editor/before_enqueue_scripts', function() {
+//	wp_enqueue_style( 'mihdan-elementor-tables-admin', plugins_url( '/assets/css/mihdan-elementor-tables-admin.css', EB_TABLES_FILE ) );
+//	wp_enqueue_script( 'mihdan-elementor-tables-api-admin', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=admin', [ 'jquery' ], EB_TABLES_VERSION, true );
+//	wp_localize_script( 'mihdan-elementor-tables-api-admin', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
+//	wp_enqueue_script( 'mihdan-elementor-tables-admin', plugins_url( '/assets/js/mihdan-elementor-tables-admin.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api-admin' ], EB_TABLES_VERSION, true );
+//} );
+//add_action( 'elementor/frontend/after_enqueue_styles', function() {
+//	wp_enqueue_style( 'mihdan-elementor-tables', plugins_url( '/assets/css/mihdan-elementor-tables.css', EB_TABLES_FILE ) );
+//} );
+//add_action( 'elementor/frontend/after_register_scripts', function() {
+//	wp_register_script( 'mihdan-elementor-tables-api', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=frontend', [], EB_TABLES_VERSION, true );
+//	wp_localize_script( 'mihdan-elementor-tables-api', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
+//	wp_register_script( 'mihdan-elementor-tables', plugins_url( '/assets/js/mihdan-elementor-tables.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api' ], EB_TABLES_VERSION, true );
+//} );
 
-add_action( 'elementor/elements/categories_registered', function() {
-	Elementor\Plugin::$instance->elements_manager->add_category(
-		'mihdan', array(
-			'title' => 'Mihdan Widgets',
-			'icon'  => 'font',
-		)
-	);
-});
 // eof;
