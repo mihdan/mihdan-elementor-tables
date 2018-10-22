@@ -43,7 +43,7 @@ class Widget extends \Elementor\Widget_Base {
 	 * @return string Widget icon.
 	 */
 	public function get_icon() {
-		return 'eicon-google-maps';
+		return 'eicon-font';
 	}
 
 	/**
@@ -79,27 +79,23 @@ class Widget extends \Elementor\Widget_Base {
 	 */
 	protected function _register_controls() {
 
-		/**
-		 * Настройки карты
-		 */
 		$this->start_controls_section(
-			'section_map_',
+			'section_content',
 			[
-				'label' => __( 'Map', 'elementor' ),
+				'label' => __( 'Content', 'plugin-name' ),
+				'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
 			]
 		);
 
 		$this->add_control(
-			'map_notice__',
+			'title',
 			[
-				'label'       => __( 'Find Latitude & Longitude', 'elementor' ),
-				'type'        => \Elementor\Controls_Manager::RAW_HTML,
-				'raw'         => '<form onsubmit="mihdan_elementor_yandex_maps_find_address( this );" action="javascript:void(0);"><input type="text" id="eb-map-find-address" class="eb-map-find-address" style="margin-top:10px; margin-bottom:10px;"><input type="submit" value="Search" class="elementor-button elementor-button-default" onclick="mihdan_elementor_yandex_maps_find_address( this )"></form><div id="eb-output-result" class="eb-output-result" style="margin-top:10px; line-height: 1.3; font-size: 12px;"></div>',
-				'label_block' => true,
+				'label' => __( 'Title', 'plugin-name' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'placeholder' => __( 'Enter your title', 'plugin-name' ),
+
 			]
 		);
-
-
 
 		$this->end_controls_section();
 
@@ -115,6 +111,9 @@ class Widget extends \Elementor\Widget_Base {
 	 * @access protected
 	 */
 	protected function _content_template() {
+		?>
+		<h3>{{{ settings.title }}}</h3>
+		<?php
 	}
 
 	/**
@@ -126,9 +125,8 @@ class Widget extends \Elementor\Widget_Base {
 	 * @access protected
 	 */
 	protected function render() {
-		?>
-		<div id="eb-map-<?php echo esc_attr( $this->get_id() ); ?>">Tables was where</div>
-		<?php
+		$settings = $this->get_settings_for_display();
+		echo '<h3>' . $settings['title'] . '</h3>';
 	}
 }
 
