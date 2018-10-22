@@ -1,5 +1,5 @@
 <?php
 
-namespace Mihdan\Elementor\Tables\Controls;
+namespace Mihdan_Elementor_Tables\Controls;
 
 // eof;

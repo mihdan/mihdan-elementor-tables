@@ -2,7 +2,7 @@
 /**
  * Виджет карты
  */
-namespace Mihdan\Elementor\Tables\Widget;
+namespace Mihdan_Elementor_Tables\Widget;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.

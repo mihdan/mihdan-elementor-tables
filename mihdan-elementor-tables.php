@@ -9,7 +9,7 @@
  * Text Domain: mihdan-elementor-tables
  * GitHub Plugin URI: https://github.com/mihdan/mihdan-elementor-tables
  */
-namespace Mihdan\Elementor\Tables;
+namespace Mihdan_Elementor_Tables;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -239,7 +239,7 @@ final class Core {
 		require_once( __DIR__ . '/widgets/tables-widget.php' );
 
 		// Register widget
-		\Elementor\Plugin::instance()->widgets_manager->register_widget_type( new \Mihdan\Elementor\Tables\Widget\Widget() );
+		\Elementor\Plugin::instance()->widgets_manager->register_widget_type( new \Mihdan_Elementor_Tables\Widget\Widget() );
 
 	}
 
