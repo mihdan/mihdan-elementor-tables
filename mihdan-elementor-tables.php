@@ -142,6 +142,8 @@ final class Core {
 		add_action( 'elementor/widgets/widgets_registered', [ $this, 'init_widgets' ] );
 		add_action( 'elementor/controls/controls_registered', [ $this, 'init_controls' ] );
 		add_action( 'elementor/elements/categories_registered', [ $this, 'init_categories' ] );
+		add_action( 'elementor/frontend/after_register_scripts', [ $this, 'widget_scripts' ] );
+		add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'widget_styles' ] );
 	}
 
 	/**
@@ -260,41 +262,17 @@ final class Core {
 		\Elementor\Plugin::$instance->elements_manager->add_category(
 			'mihdan', array(
 				'title' => 'Mihdan Widgets',
-				'icon'  => 'font',
+				'icon'  => 'eicon-font',
 			)
 		);
 	}
+
+	public function widget_scripts() {}
+	public function widget_styles() {}
 }
 
 Core::get_instance();
 
-// eof;
-
-
-
-
-
-
-
-
-
-
-/**
- * Register and enqueue a custom stylesheet in the Elementor.
- */
 //add_action( 'elementor/editor/before_enqueue_scripts', function() {
-//	wp_enqueue_style( 'mihdan-elementor-tables-admin', plugins_url( '/assets/css/mihdan-elementor-tables-admin.css', EB_TABLES_FILE ) );
-//	wp_enqueue_script( 'mihdan-elementor-tables-api-admin', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=admin', [ 'jquery' ], EB_TABLES_VERSION, true );
-//	wp_localize_script( 'mihdan-elementor-tables-api-admin', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
-//	wp_enqueue_script( 'mihdan-elementor-tables-admin', plugins_url( '/assets/js/mihdan-elementor-tables-admin.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api-admin' ], EB_TABLES_VERSION, true );
-//} );
-//add_action( 'elementor/frontend/after_enqueue_styles', function() {
-//	wp_enqueue_style( 'mihdan-elementor-tables', plugins_url( '/assets/css/mihdan-elementor-tables.css', EB_TABLES_FILE ) );
-//} );
-//add_action( 'elementor/frontend/after_register_scripts', function() {
-//	wp_register_script( 'mihdan-elementor-tables-api', 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&source=frontend', [], EB_TABLES_VERSION, true );
-//	wp_localize_script( 'mihdan-elementor-tables-api', 'EB_WP_URL', array( 'plugin_url' => plugin_dir_url( __FILE__ ) ) );
-//	wp_register_script( 'mihdan-elementor-tables', plugins_url( '/assets/js/mihdan-elementor-tables.js', EB_TABLES_FILE ), [ 'mihdan-elementor-tables-api' ], EB_TABLES_VERSION, true );
-//} );
 
 // eof;
